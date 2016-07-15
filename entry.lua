@@ -97,7 +97,7 @@ while i <= #arg do
 		cmd = Options[v]
 		
 		if not cmd then
-			error("Unkniown option ", v)
+			error("Unknown option ", v)
 		end
 	end
 
@@ -151,7 +151,7 @@ x2c.MakeMetaObject(ImportMeta, "Import")
 
 if #x2c.inputfiles == 0 then
 	print("No input files")
-	PrintUsage()
+	PrintHelp()
 	os.exit(1)
 end
 
