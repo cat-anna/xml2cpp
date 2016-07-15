@@ -5,7 +5,7 @@ local Assert = x2c.Assert
 
 local function Write_ResetToDefault(data, writter)
 	writter:DefLine { 
-		"inline bool ", 
+		"inline void ", 
 		data:LocalName(), 
 		"_SetDefault(", 
 		data:LocalName(), 
@@ -96,7 +96,7 @@ local function WriteImpl(s, writter)
 			" &value, const char* name);"
 		}	
 		writter:DefLine { 
-			"inline bool ", 
+			"inline void ", 
 			s:LocalName(), 
 			"_SetDefault(", 
 			s:LocalName(), 
@@ -216,7 +216,7 @@ end
 function Struc:GenResetToDefault(member, name, writter)
 	writter:DefLine {
 		self:GlobalName(),
-		"_SetDefault(*this);",
+		"_SetDefault(", member, ");",
 	}
 end
 
@@ -230,7 +230,7 @@ function StructureMeta.new(data)
 	end
 	
 	if x2c.CurrentNamespace:Exists(data.name) then
-		return x2c.CurrentNamespace:Get(data.name) 
+		error(StructureMeta, "Attempt to redefine ", x2c.CurrentNamespace:Get(data.name))
 	end		
 	
 	data.imported = false
@@ -261,7 +261,7 @@ function StructureMeta.import(data)
 	end	
 	
 	if x2c.CurrentNamespace:Exists(data.name) then
-		return x2c.CurrentNamespace:Get(data.name) 
+		error(StructureMeta, "Attempt to redefine ", x2c.CurrentNamespace:Get(data.name))
 	end		
 	
 	data.imported = true

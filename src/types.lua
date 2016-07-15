@@ -89,8 +89,8 @@ end
 function IType:GenWrite(member, name, writter)
 	writter:DefLine { "{" }
 	writter:BeginBlock()
-	writter:DefLine { "auto item = node.child(\"", name, "\")", }
-	writter:DefLine { "if(!item) item = node.append_child(\"", name, "\");", }
+	writter:DefLine { "auto item = node.child(", name, ");", }
+	writter:DefLine { "if(!item) item = node.append_child(", name, ");", }
 	writter:DefLine { "item.text() = ", string.format(self.write_format or "%s", member), ";", }	
 	writter:EndBlock()	
 	writter:DefLine { "}" }
@@ -99,7 +99,7 @@ end
 function IType:GenRead(member, name, writter)
 	writter:DefLine { "{" }
 	writter:BeginBlock()
-	writter:DefLine { "auto item = node.child(\"", name, "\")", }
+	writter:DefLine { "auto item = node.child(", name, ");", }
 	writter:DefLine { "if(!item) return false;", }
 	writter:DefLine { member, " = item.text().", self.pugi_read, "(", ");", }	
 	writter:EndBlock()	
