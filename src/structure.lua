@@ -146,6 +146,22 @@ local function WriteImpl(s, writter)
 			"_SetDefault(*this);",
 		}
 		writter:DefLine "}"
+		
+		writter:DefLine "bool WriteFile(const std::string& filename) const {"
+		writter:BeginBlock()
+		writter:DefLine "pugi::xml_document doc;"
+		writter:DefLine {"auto root = doc.append_child(\"", s:GetName(), "\");" }
+		writter:DefLine "if(!Write(root)) return false;"
+		writter:DefLine "return doc.save_file(filename.c_str());"
+		writter:EndBlock()
+		writter:DefLine "}"		
+		writter:DefLine "bool ReadFile(const std::string& filename) {"
+		writter:BeginBlock()
+		writter:DefLine "pugi::xml_document doc;"
+		writter:DefLine "doc.load_file(filename.c_str());"
+		writter:DefLine {"return Read(doc.child(\"", s:GetName(), "\"));" }
+		writter:EndBlock()
+		writter:DefLine "}"				
 
 		writter:EndBlock()
 		writter:DefLine "};"
