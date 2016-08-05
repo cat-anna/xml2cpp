@@ -36,7 +36,7 @@ local function Write_Table(T, writter)
 	writter:EndBlock()	
 	writter:DefLine "}" 
 	writter:DefLine "auto count_att = parent.attribute(\"count\");" 
-	writter:DefLine "if(!count_att) count_att = parent.append_attribute(\"count\") "
+	writter:DefLine "if(!count_att) count_att = parent.append_attribute(\"count\");"
 	writter:DefLine "count_att = value.size();"
 	writter:DefLine "return true;" 
 	writter:EndBlock()	
@@ -55,7 +55,7 @@ local function Write_Table(T, writter)
 	writter:DefLine "value.clear();"
 	writter:DefLine "auto count_att = parent.attribute(\"count\");" 
 	writter:DefLine "if(!count_att) value.reserve(count_att.as_uint());"
-	writter:DefLine "for(auto node = parent.first_child(\"item\"); node; node = node.next_sibling(\"item\") {" 
+	writter:DefLine "for(auto node = parent.child(\"item\"); node; node = node.next_sibling(\"item\")) {" 
 	writter:BeginBlock()
 	writter:DefLine { element:GlobalName(), " item;" }
 	element:GenRead("item", "\"item\"", writter)
@@ -193,7 +193,7 @@ local function Write_Map(T, writter)
 	writter:EndBlock()	
 	writter:DefLine "}" 
 	writter:DefLine "auto count_att = parent.attribute(\"count\");" 
-	writter:DefLine "if(!count_att) count_att = parent.append_attribute(\"count\") "
+	writter:DefLine "if(!count_att) count_att = parent.append_attribute(\"count\");"
 	writter:DefLine "count_att = value.size();"
 	writter:DefLine "return true;" 
 	writter:EndBlock()	

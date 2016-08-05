@@ -64,7 +64,7 @@ local function WriteImpl(s, writter)
 		s:LocalName(), 
 		"_Write(pugi::xml_node node, ", 
 		s:LocalName(), 
-		" value, const char* name)"
+		" value, const char* name) {"
 	}
 	writter:BeginBlock()
 	writter:DefLine { "auto item = node.child(name);" }
@@ -79,12 +79,12 @@ local function WriteImpl(s, writter)
 		s:LocalName(), 
 		"_Read(const pugi::xml_node node, ", 
 		s:LocalName(), 
-		" &value, const char* name)"
+		" &value, const char* name) {"
 	}
 	writter:BeginBlock()
 	writter:DefLine { "auto item = node.child(name);" }
 	writter:DefLine { "if(!item) return false;" }
-	writter:DefLine { "value = static_cast<", s:LocalName(), ">(item.text().as_ulong());" }
+	writter:DefLine { "value = static_cast<", s:LocalName(), ">(item.text().as_ullong());" }
 	writter:DefLine { "return true;" }
 	writter:EndBlock()
 	writter:DefLine { "};", }	
@@ -110,7 +110,7 @@ local function make_enum(data)
 		data.values = { }
 		for i,v in ipairs(data.raw_values) do 
 		
-			local name, value = unpack(v:split("="))
+			local name, value = (unpack or table.unpack)(v:split("="))
 			name = name:trim()
 			if value then
 				value = value:trim()
@@ -142,14 +142,25 @@ function Enum_t:GetDefaultValue()
 end
 
 function Enum_t:GenResetToDefault(member, name, writter)
-	writter:DefLine {
-		member,
-		" = ",
-		self:GlobalName(),
-		"::",
-		self:GetDefaultValue(),
-		";",
-	}
+	local def = self:GetDefaultValue()
+	if def == nil then
+		writter:DefLine {
+			"// for ",
+			member,
+			" of type ",
+			self:GlobalName(),
+			" default value is not set",
+		}
+	else
+		writter:DefLine {
+			member,
+			" = ",
+			self:GlobalName(),
+			"::",
+			def,
+			";",
+		}
+	end
 end
 
 -----------------------
@@ -177,11 +188,13 @@ function EnumMeta.new(data)
 		data.config.enum_postfix or ""
 	)
 	
-	data.default_value = string.format("%s%s%s", 
-		data.config.enum_value_prefix or "", 
-		data.default,
-		data.config.enum_value_postfix or ""
-	)
+	if data.default then
+		data.default_value = string.format("%s%s%s", 
+			data.config.enum_value_prefix or "", 
+			data.default,
+			data.config.enum_value_postfix or ""
+		)
+	end
 	
 	local e = make_enum(data)	
 	info("Defined enum ", e:LocalName(), " in namespace ", e.namespace:DisplayName())
