@@ -135,7 +135,7 @@ function ImportMeta.__call(self, fn)
 	local f, err = loadfile(fn)
 
 	if not f then
-		error("Failed to load file ", f, "\n", err)
+		error("Failed to load file ", fn, "\n", err)
 	end
 
 	ImportLevel = ImportLevel + 1
