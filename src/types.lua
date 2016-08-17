@@ -69,22 +69,56 @@ function IType:Type()
 	return "Type"
 end
 
-function IType:GenWrite(member, name, writter)
+function IType:GenWrite(member, name, writter, exportsettings)
+	exportsettings = exportsettings or { }
+	
+	local methodname
+	local accessname
+	if exportsettings.useattribute then
+		methodname = "attribute"
+		accessname = "item"
+	else
+		methodname = "child"
+		accessname = "item.text()"
+	end
+	
 	writter:DefLine { "{" }
 	writter:BeginBlock()
-	writter:DefLine { "auto item = node.child(", name, ");", }
-	writter:DefLine { "if(!item) item = node.append_child(", name, ");", }
-	writter:DefLine { "item.text() = ", string.format(self.write_format or "%s", member), ";", }	
+	writter:DefLine { "auto item = node.", methodname, "(", name, ");", }
+	writter:DefLine { "if(!item) item = node.append_", methodname, "(", name, ");", }
+	writter:DefLine { accessname, " = ", string.format(self.write_format or "%s", member), ";", }
 	writter:EndBlock()	
 	writter:DefLine { "}" }
 end
 
-function IType:GenRead(member, name, writter)
+function IType:GenRead(member, name, writter, exportsettings)
+	exportsettings = exportsettings or { }
+
+	local methodname
+	local accessname
+	if exportsettings.useattribute then
+		methodname = "attribute"
+		accessname = "item"
+	else
+		methodname = "child"
+		accessname = "item.text()"
+	end
+	
+	local req = exportsettings.require
+	
+	local readline = { member, " = ", accessname, ".", self.pugi_read, "(", member, ");", }		
+	
 	writter:DefLine { "{" }
-	writter:BeginBlock()
-	writter:DefLine { "auto item = node.child(", name, ");", }
-	writter:DefLine { "if(!item) return false;", }
-	writter:DefLine { member, " = item.text().", self.pugi_read, "(", ");", }	
+	writter:BeginBlock()	
+	writter:DefLine { "auto item = node.", methodname, "(", name, ");", }
+	
+	if req then
+		writter:DefLine { "if(!item) return false;", }
+		writter:DefLine(readline)
+	else
+		writter:DefLine { "if(item)", }
+		writter:DefBlockLine(readline)
+	end
 	writter:EndBlock()	
 	writter:DefLine { "}" }
 end

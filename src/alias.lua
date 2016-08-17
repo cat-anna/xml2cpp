@@ -40,9 +40,10 @@ end
 
 local function AliasType(self, Type, NewName)
 	data = { }
-	
+
 	data.source_type = Type
 	data.name = NewName
+	data.local_name = NewName
 	data.object_type = Type:Type()
 	data.namespace = x2c.CurrentNamespace
 	data.config = table.shallow_clone(data.namespace.config);
@@ -77,7 +78,7 @@ local function UseNamespace(self, Type)
 end
 
 local function UseType(self, Type)
-	return Alias(Type, Type:LocalName())
+	return Alias(Type, Type:GetName())
 end
 
 function UseMeta.namespace( Type)

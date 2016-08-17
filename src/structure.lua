@@ -39,7 +39,7 @@ local function Write_Write(data, writter)
 	writter:DefLine "}" 
 	writter:DefLine "if(!node) return false;" 
 	for k,v in pairs(data.fields) do 
-		v:GenWrite("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter)
+		v:GenWrite("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter, data.exportsettings)
 	end	
 	writter:DefLine "return true;" 
 	writter:EndBlock()	
@@ -58,7 +58,7 @@ local function Write_Read(data, writter)
 	writter:DefLine "pugi::xml_node node = name == nullptr ? in_node : in_node.child(name);" 
 	writter:DefLine "if(!node) return false;" 
 	for k,v in pairs(data.fields) do 
-		v:GenRead("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter)
+		v:GenRead("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter, data.exportsettings)
 	end	
 	writter:DefLine "return true;" 
 	writter:EndBlock()	
@@ -203,6 +203,8 @@ local function make_structure(data)
 		end	
 	end
 
+	data.object_type = "Structure"
+	
 	setmetatable(data, Struc_mt)
 	return data
 end
@@ -223,10 +225,6 @@ end
 
 function Struc:DisplayName()
 	return self:GlobalName()
-end
-
-function Struc:Type()
-	return "Structure"
 end
 
 function Struc:GenResetToDefault(member, name, writter)
@@ -251,7 +249,11 @@ function StructureMeta.new(data)
 	
 	data.imported = false
 	data.namespace = x2c.CurrentNamespace
-	data.config = table.shallow_clone(data.namespace.config);
+	data.config = table.shallow_clone(data.namespace.config)
+	
+	data.exportsettings = data.pugi or { }
+	data.require = data.require or "all"
+	data.exportsettings.require = data.require ~= "none"
 	
 	data.classname = string.format("%s%s%s", 
 		data.config.structure_prefix or "", 
@@ -282,7 +284,11 @@ function StructureMeta.import(data)
 	
 	data.imported = true
 	data.namespace = x2c.CurrentNamespace
-	data.config = table.shallow_clone(data.namespace.config);
+	data.config = table.shallow_clone(data.namespace.config)
+	
+	data.exportsettings = data.pugi or { }
+	data.require = data.require or "all"
+	data.exportsettings.require = data.require ~= "none"
 	
 	data.classname = string.format("%s%s%s", 
 		data.config.structure_prefix or "", 

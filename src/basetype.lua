@@ -34,7 +34,7 @@ function BaseType_mt.__call(self, arg)
 end
 
 function BaseType_mt.__tostring(self)
-	return string.format("%s(%s)", self.object_type, self:GlobalName())
+	return string.format("%s(%s)", self:Type(), self:GlobalName())
 end
 
 function BaseType:GenResetToDefault(member, name, writter)
@@ -44,26 +44,48 @@ function BaseType:GenResetToDefault(member, name, writter)
 	}
 end
 
-function BaseType:GenWrite(member, name, writter)
-	writter:DefLine { 
-		"if(!", 
-		self:GlobalName(), 
-		"_Write(node, ", 
-		member, 
-		", ", name,
-		")) return false;", 
-	}	
+function BaseType:GenWrite(member, name, writter, exportsettings)
+	exportsettings = exportsettings or { }
+	if exportsettings.require then
+		writter:DefLine { 
+			"if(!", 
+			self:GlobalName(), 
+			"_Write(node, ", 
+			member, 
+			", ", name,
+			")) return false;", 
+		}	
+	else 
+		writter:DefLine { 
+			self:GlobalName(), 
+			"_Write(node, ", 
+			member, 
+			", ", name,
+			");", 
+		}		
+	end
 end
 
-function BaseType:GenRead(member, name, writter)
-	writter:DefLine { 
-		"if(!", 
-		self:GlobalName(), 
-		"_Read(node, ", 
-		member, 
-		", ", name,
-		")) return false;", 
-	}
+function BaseType:GenRead(member, name, writter, exportsettings)
+	exportsettings = exportsettings or { }
+	if exportsettings.require then
+		writter:DefLine { 
+			"if(!", 
+			self:GlobalName(), 
+			"_Read(node, ", 
+			member, 
+			", ", name,
+			")) return false;", 
+		}
+	else 
+		writter:DefLine { 
+			self:GlobalName(), 
+			"_Read(node, ", 
+			member, 
+			", ", name,
+			");", 
+		}
+	end
 end
 
 function BaseType:Type()
