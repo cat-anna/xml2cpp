@@ -118,31 +118,59 @@ x2c.output = Writter.open()
 
 local ImportMeta = { }
 local ImportLevel = 0
+local FileStack = { }
 
-function ImportMeta.__call(self, fn)
-	if not x2c.settings.gen_all then
-		x2c.output:EnableOutput(ImportLevel == 0)
-	end
+function ImportMeta.__call(self, importfn)
+
+	print("import ", importfn)
+	local fn = importfn:match("([^/\\]+)$") or importfn
 
 	if x2c.imports[fn] then
 		return
 	end
+	
+	local prev
+	if ImportLevel > 0 then
+		prev = FileStack[ImportLevel]
+	end
+	
+	local ffull
+	
+	if prev then
+		ffull = prev.path .. importfn
+		
+	else 
+		ffull = importfn
+	end
 
+	fpath = ffull:match("(.*[/\\])") 
+		print(fpath)
 	x2c.imports[fn] = { }
 
-	info("Processing file ", fn)
+	info(string.format("Processing file %s (%s)", fn, ffull))
 
-	local f, err = loadfile(fn)
+	local f, err = loadfile(ffull)
 
 	if not f then
 		error("Failed to load file ", fn, "\n", err)
 	end
 
 	ImportLevel = ImportLevel + 1
+	FileStack[ImportLevel] = { import = importfn, name = fn, path = fpath, ffull = ffull }
+	
+	if not x2c.settings.gen_all then
+		x2c.output:EnableOutput(ImportLevel == 1)
+	end
 	namespace ""
 	f()
 	namespace ""
+
+	FileStack[ImportLevel] = nil
 	ImportLevel = ImportLevel - 1
+	
+	if not x2c.settings.gen_all then
+		x2c.output:EnableOutput(ImportLevel == 1)
+	end
 end
 
 x2c.MakeMetaObject(ImportMeta, "Import")
