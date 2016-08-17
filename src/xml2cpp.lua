@@ -144,7 +144,6 @@ function ImportMeta.__call(self, importfn)
 	end
 
 	fpath = ffull:match("(.*[/\\])") 
-		print(fpath)
 	x2c.imports[fn] = { }
 
 	info(string.format("Processing file %s (%s)", fn, ffull))
