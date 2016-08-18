@@ -5,8 +5,8 @@ local Assert = x2c.Assert
 
 local Alias_t, Alias_t_mt = x2c.MakeTypeClass()
 
-function Alias_t:GenResetToDefault(member, name, writter)
-	self.source_type:GenResetToDefault(member, name, writter)
+function Alias_t:GenResetToDefault(member, name, writter, ...)
+	self.source_type:GenResetToDefault(member, name, writter, ...)
 end
 
 function Alias_t:GenWrite(member, name, writter)

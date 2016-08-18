@@ -56,11 +56,20 @@ function IType:GetDefaultValue()
 	return self.default
 end
 
-function IType:GenResetToDefault(member, name, writter)
+function IType:GenResetToDefault(member, name, writter, exportsettings, default)
+	local value
+	default = default or self:GetDefaultValue()
+	
+	if self.assign_cast then
+		value = string.format(self.assign_cast, tostring(default))
+	else 
+		value = string.format("static_cast<%s>(%s)", self.name, tostring(default))
+	end
+
 	writter:DefLine {
 		member,
 		" = ",
-		self:GetDefaultValue(),
+		value,
 		";",
 	}
 end
@@ -80,6 +89,10 @@ function IType:GenWrite(member, name, writter, exportsettings)
 	else
 		methodname = "child"
 		accessname = "item.text()"
+	end
+	
+	if exportsettings.alias then
+		name = "\"" .. exportsettings.alias .. "\""
 	end
 	
 	writter:DefLine { "{" }
@@ -105,6 +118,10 @@ function IType:GenRead(member, name, writter, exportsettings)
 	end
 	
 	local req = exportsettings.require
+	
+	if exportsettings.alias then
+		name = "\"" .. exportsettings.alias .. "\""
+	end	
 	
 	local readline = { member, " = ", accessname, ".", self.pugi_read, "(", member, ");", }		
 	
@@ -137,9 +154,9 @@ TypesMeta.s64 = make_type { name =  "int64_t", default = "0", pugi_read="as_long
 TypesMeta.u64 = make_type { name = "uint64_t", default = "0", pugi_read="as_ulong", integral = true }
 
 TypesMeta.float = make_type { name = "float", default = "0.0f", pugi_read="as_float" }
-TypesMeta.double = make_type { name = "double", default = "0.0", pugi_read="as_double" }
-TypesMeta.bool = make_type { name = "bool", default = "false", pugi_read="as_bool" }
-TypesMeta.string = make_type { name = "std::string", local_name="string", default = "", pugi_read="as_string", format="\"%s\"", write_format="%s.c_str()" }
+TypesMeta.double = make_type { name = "double", default = "0.0", pugi_read="as_double", }
+TypesMeta.bool = make_type { name = "bool", default = "false", pugi_read="as_bool" , }
+TypesMeta.string = make_type { name = "std::string", local_name="string", default = "", pugi_read="as_string", format="\"%s\"", write_format="%s.c_str()", assign_cast="\"%s\""  }
 
 --types.bytes/hex
 

@@ -3,7 +3,7 @@ local Assert = x2c.Assert
 
 -----------------------
 
-local function Write_ResetToDefault(data, writter)
+local function Write_ResetToDefault(data, writter, exportsettings, default)
 	writter:DefLine { 
 		"inline void ", 
 		data:LocalName(), 
@@ -12,8 +12,8 @@ local function Write_ResetToDefault(data, writter)
 		" &value) {"
 	}
 	writter:BeginBlock()
-	for k,v in pairs(data.fields) do 
-		v:GenResetToDefault("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter)
+	for i,v in ipairs(data.fields) do 
+		v.type:GenResetToDefault("value." .. v.decoratedname, "\"" .. v.name .. "\"", writter, v.exportsettings, v.default)
 	end	
 	writter:EndBlock()	
 	writter:DefLine "}"
@@ -38,8 +38,8 @@ local function Write_Write(data, writter)
 	writter:EndBlock()	
 	writter:DefLine "}" 
 	writter:DefLine "if(!node) return false;" 
-	for k,v in pairs(data.fields) do 
-		v:GenWrite("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter, data.exportsettings)
+	for i,v in ipairs(data.fields) do 
+		v.type:GenWrite("value." .. v.decoratedname, "\"" .. v.name .. "\"", writter, v.exportsettings)
 	end	
 	writter:DefLine "return true;" 
 	writter:EndBlock()	
@@ -57,8 +57,8 @@ local function Write_Read(data, writter)
 	writter:BeginBlock()
 	writter:DefLine "pugi::xml_node node = name == nullptr ? in_node : in_node.child(name);" 
 	writter:DefLine "if(!node) return false;" 
-	for k,v in pairs(data.fields) do 
-		v:GenRead("value." .. data.fieldMembers[k], "\"" .. k .. "\"", writter, data.exportsettings)
+	for i,v in ipairs(data.fields) do 
+		v.type:GenRead("value." .. v.decoratedname, "\"" .. v.name .. "\"", writter, v.exportsettings)
 	end	
 	writter:DefLine "return true;" 
 	writter:EndBlock()	
@@ -113,11 +113,11 @@ local function WriteImpl(s, writter)
 		
 		writter:BeginBlock()
 		if s.fields then
-			for k,v in pairs(s.fields) do 
+			for i,v in ipairs(s.fields) do 
 				writter:DefLine {
-					v:GlobalName(),
+					v.type:GlobalName(),
 					" ",
-					s.fieldMembers[k],
+					v.decoratedname,
 					";",
 				}
 			end	
@@ -188,18 +188,38 @@ function Struc_mt.__call(self, arg)
 end
 
 local function make_structure(data)
+
+	data.exportsettings = data.pugi or { }
+	
 	if data.fields then
-		data.fieldMembers = { }
-		for k,v in pairs(data.fields) do 
+		for i,v in ipairs(data.fields) do 
+			Assert.type_nonnamespace(v.type, Structure, "Structure member cannot be of type " , v.type)
 		
-			Assert.type_nonnamespace(v, Structure, "Structure member cannot be of type " , v)
-		
+			if not v.pugi then
+				v.pugi = { }
+			end
+			
+			v.exportsettings = v.pugi
+
 			local member = string.format("%s%s%s", 
 				data.config.structure_field_prefix or "", 
-				k,
+				v.name,
 				data.config.structure_field_postfix or ""
 			)
-			data.fieldMembers[k] = member
+			v.decoratedname = member
+			
+			setmetatable(v.exportsettings, { 
+				__index = function (self, value)
+					local r = rawget(self, value)
+					if r then
+						return r
+					end
+					return data.exportsettings[value]
+				end,
+				__newindex = function() 
+					error(Structure, "Attempt to modify structure member ", v.name)
+				end
+			} )
 		end	
 	end
 
@@ -227,11 +247,18 @@ function Struc:DisplayName()
 	return self:GlobalName()
 end
 
-function Struc:GenResetToDefault(member, name, writter)
-	writter:DefLine {
-		self:GlobalName(),
-		"_SetDefault(", member, ");",
-	}
+function Struc:GenResetToDefault(member, name, writter, exportsettings, default)
+	--if not default then
+	--	writter:DefLine {
+	--		self:GlobalName(),
+	--		"_SetDefault(", member, ");",
+	--	}
+	--else
+	default = default or { }
+		for i,v in ipairs(self.fields) do 
+			v.type:GenResetToDefault(member .. "." .. v.decoratedname, "\"" .. v.name .. "\"", writter, v.exportsettings, default[v.name])
+		end	
+	--end
 end
 
 -----------------------
@@ -250,11 +277,7 @@ function StructureMeta.new(data)
 	data.imported = false
 	data.namespace = x2c.CurrentNamespace
 	data.config = table.shallow_clone(data.namespace.config)
-	
-	data.exportsettings = data.pugi or { }
-	data.require = data.require or "all"
-	data.exportsettings.require = data.require ~= "none"
-	
+		
 	data.classname = string.format("%s%s%s", 
 		data.config.structure_prefix or "", 
 		data.name,
@@ -285,16 +308,14 @@ function StructureMeta.import(data)
 	data.imported = true
 	data.namespace = x2c.CurrentNamespace
 	data.config = table.shallow_clone(data.namespace.config)
-	
-	data.exportsettings = data.pugi or { }
-	data.require = data.require or "all"
-	data.exportsettings.require = data.require ~= "none"
-	
+		
 	data.classname = string.format("%s%s%s", 
 		data.config.structure_prefix or "", 
 		data.name,
 		data.config.structure_postfix or ""
 	)
+	data.decoratedname = data.classname
+	
 	info("Imported structure ", data.classname, " in namespace ", data.namespace:DisplayName(), " from ", data.location)
 
 	local s = make_structure(data)
