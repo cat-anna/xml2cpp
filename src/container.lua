@@ -58,6 +58,7 @@ local function Write_Table(T, writter)
 	writter:DefLine "for(auto node = parent.child(\"item\"); node; node = node.next_sibling(\"item\")) {" 
 	writter:BeginBlock()
 	writter:DefLine { element:GlobalName(), " tableitem;" }
+	element:GenResetToDefault("tableitem", nil, writter)
 	element:GenRead("tableitem", nil, writter)
 	writter:DefLine "value.push_back(std::move(tableitem));"
 	writter:EndBlock()
