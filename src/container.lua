@@ -32,7 +32,7 @@ local function Write_Table(T, writter)
 	writter:DefLine "for(const auto& it: value) {" 
 	writter:BeginBlock()	
 	writter:DefLine "auto node = parent.append_child(\"item\");"
-	element:GenWrite("it", "\"item\"", writter)
+	element:GenWrite("it", nil, writter)
 	writter:EndBlock()	
 	writter:DefLine "}" 
 	writter:DefLine "auto count_att = parent.attribute(\"count\");" 
@@ -54,12 +54,12 @@ local function Write_Table(T, writter)
 	writter:DefLine "if(!parent) return false;" 
 	writter:DefLine "value.clear();"
 	writter:DefLine "auto count_att = parent.attribute(\"count\");" 
-	writter:DefLine "if(!count_att) value.reserve(count_att.as_uint());"
+	writter:DefLine "if(count_att) value.reserve(count_att.as_uint());"
 	writter:DefLine "for(auto node = parent.child(\"item\"); node; node = node.next_sibling(\"item\")) {" 
 	writter:BeginBlock()
-	writter:DefLine { element:GlobalName(), " item;" }
-	element:GenRead("item", "\"item\"", writter)
-	writter:DefLine "value.push_back(std::move(item));"
+	writter:DefLine { element:GlobalName(), " tableitem;" }
+	element:GenRead("tableitem", nil, writter)
+	writter:DefLine "value.push_back(std::move(tableitem));"
 	writter:EndBlock()
 	writter:DefLine "}" 
 	writter:DefLine "return true;" 

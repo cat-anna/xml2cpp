@@ -46,6 +46,7 @@ end
 
 function BaseType:GenWrite(member, name, writter, exportsettings)
 	exportsettings = exportsettings or { }
+	name = name or "nullptr"
 	if exportsettings.require then
 		writter:DefLine { 
 			"if(!", 
@@ -68,6 +69,7 @@ end
 
 function BaseType:GenRead(member, name, writter, exportsettings)
 	exportsettings = exportsettings or { }
+	name = name or "nullptr"
 	if exportsettings.require then
 		writter:DefLine { 
 			"if(!", 

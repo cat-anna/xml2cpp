@@ -58,6 +58,14 @@ function info(...)
 	xprint(line, ...)
 end
 
+function IfThen(cond, TrueVal, FalseVal)
+	if cond then
+		return TrueVal
+	else
+		return FalseVal
+	end
+end
+
 -----------------------
 
 local Assert = { }
