@@ -2,6 +2,10 @@
 local utils = { }
 x2c.utils = utils
 
+if not table.unpack then
+	table.unpack = unpack
+end
+
 function string:split(sep)
         local sep, fields = sep or ":", {}
         local pattern = string.format("([^%s]+)", sep)

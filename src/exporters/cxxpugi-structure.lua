@@ -64,6 +64,7 @@ function StrucType:WriteRead(block)
 end
 
 function StrucType:WriteClass(block)
+	block:DocString(self.description)
 	block:DefineStructure(self:LocalName())
 	block:Line { "inline bool ", self:LocalName(), "_Write(pugi::xml_node in_node, const ", self:LocalName(), " &value, const char* name);", }
 	block:Line { "inline bool ", self:LocalName(), "_Read(const pugi::xml_node in_node, ", self:LocalName(), " &value, const char* name);", }	
@@ -75,6 +76,7 @@ function StrucType:WriteClass(block)
 	
 	if self.fields then
 		for i,v in ipairs(self.fields) do 
+			block:DocString(v.description)
 			block:Line { v.type:GlobalName(), " ", v.decoratedname, ";", }
 		end	
 	end
@@ -116,6 +118,7 @@ end
 
 function StrucType:WriteImplementation(block)
 	if self.imported then
+		block:DocString(self.description)
 		block:MakeAlias(self:LocalName(), self.location)
 	else
 		self:WriteClass(block)

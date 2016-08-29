@@ -39,6 +39,16 @@ function CXXBlockExt:EndStructure()
 	self:EndBlockLine { "};", }
 end
 
+function CXXBlockExt:DocString(text)
+	local t = type(text)
+	if t == "table" then
+		self:Line { "/** ", (table.unpack)(text), " */", }
+	end
+	if t == "string" then
+		self:Line { "/** ", text, " */", }
+	end	
+end
+
 function CXXWritter:WriteFileHeader()
 	local block = self.HeaderBlock
 	block:Line "/*"

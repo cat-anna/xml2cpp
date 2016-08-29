@@ -25,6 +25,7 @@ end
 ---------------------------------------
 
 function EnumType:WriteImplementation(block)
+	block:DocString(self.description)
 	if self.imported then
 		block:MakeAlias(self:LocalName(), self.location)
 	else
@@ -38,6 +39,7 @@ function EnumType:WriteImplementation(block)
 
 		if self.values then
 			for i,v in ipairs(self.values) do 
+				block:DocString(v.description)
 				if v.value then
 					block:Line { v.name, " = ", vvalue, ",", }			
 				else
