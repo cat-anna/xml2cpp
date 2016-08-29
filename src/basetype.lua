@@ -38,7 +38,7 @@ function BaseType_mt.__tostring(self)
 end
 
 function BaseType:GenResetToDefault(member, name, writter)
-	writter:DefLine {
+	writter:Line {
 		self:GlobalName(),
 		"_SetDefault(", member, ");",
 	}
@@ -48,7 +48,7 @@ function BaseType:GenWrite(member, name, writter, exportsettings)
 	exportsettings = exportsettings or { }
 	name = name or "nullptr"
 	if exportsettings.require then
-		writter:DefLine { 
+		writter:Line { 
 			"if(!", 
 			self:GlobalName(), 
 			"_Write(node, ", 
@@ -57,7 +57,7 @@ function BaseType:GenWrite(member, name, writter, exportsettings)
 			")) return false;", 
 		}	
 	else 
-		writter:DefLine { 
+		writter:Line { 
 			self:GlobalName(), 
 			"_Write(node, ", 
 			member, 
@@ -71,7 +71,7 @@ function BaseType:GenRead(member, name, writter, exportsettings)
 	exportsettings = exportsettings or { }
 	name = name or "nullptr"
 	if exportsettings.require then
-		writter:DefLine { 
+		writter:Line { 
 			"if(!", 
 			self:GlobalName(), 
 			"_Read(node, ", 
@@ -80,7 +80,7 @@ function BaseType:GenRead(member, name, writter, exportsettings)
 			")) return false;", 
 		}
 	else 
-		writter:DefLine { 
+		writter:Line { 
 			self:GlobalName(), 
 			"_Read(node, ", 
 			member, 

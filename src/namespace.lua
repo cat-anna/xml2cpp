@@ -46,7 +46,6 @@ function Namespace:Get(name)
 	return i
 end
 
-
 function Namespace:Exists(name)
 	local i = self.Internals[name]
 	if not i then
@@ -59,7 +58,6 @@ function Namespace:Exists(name)
 	
 	return true
 end
-
 
 function Namespace:GlobalName()
 	if not self.parent then
@@ -76,14 +74,14 @@ function Namespace:DisplayName()
 	return self:GlobalName()
 end
 
-function Namespace:Enter(writter)
+function Namespace:WriteEnter(writter)
 	if not self.parent then
 		return
 	end
 	
-	self.parent:Enter(writter)
+	self.parent:WriteEnter(writter)
 
-	writter:DefLine {
+	writter:Line {
 		"namespace ",
 		self:LocalName(),
 		" {",
@@ -91,15 +89,15 @@ function Namespace:Enter(writter)
 	writter:BeginBlock()
 end
 
-function Namespace:Leave(writter)
+function Namespace:WriteLeave(writter)
 	if not self.parent then
 		return
 	end
 	
-	self.parent:Leave(writter)
+	self.parent:WriteLeave(writter)
 	
 	writter:EndBlock()	
-	writter:DefLine {
+	writter:Line {
 		"}",
 	}
 end
@@ -171,9 +169,9 @@ function namespace_mt.__call(n, NName, ReturnOnly)
 	end
 	
 	if not ReturnOnly then
-		x2c.CurrentNamespace:Leave(x2c.output)	
+--		x2c.CurrentNamespace:Leave(x2c.output)	
 		x2c.CurrentNamespace = current
-		x2c.CurrentNamespace:Enter(x2c.output)	
+--		x2c.CurrentNamespace:Enter(x2c.output)	
 	end
 	
 	return current
