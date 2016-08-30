@@ -216,7 +216,21 @@ function Local_mt.__newindex(self, name)
 	error("Attempt to modify Local context directly!")
 end
 
---------------
+------------------------------------------
+
+local GlobalMt = { }
+local G = _G
+function GlobalMt.__index(Gt, name)
+	local v = rawget(G, name)
+	if v then
+		return v
+	end
+	return Local[name]
+end
+
+setmetatable(G, GlobalMt)
+
+------------------------------------------
 
 x2c.GlobalNamespace = Namespace.new()
 x2c.CurrentNamespace = x2c.GlobalNamespace
