@@ -2,6 +2,10 @@
 local utils = { }
 x2c.utils = utils
 
+if not table.unpack then
+	table.unpack = unpack
+end
+
 function string:split(sep)
         local sep, fields = sep or ":", {}
         local pattern = string.format("([^%s]+)", sep)
@@ -71,6 +75,18 @@ end
 local Assert = { }
 x2c.Assert = Assert
 
+function Assert.String(t, sender, msg, ...)
+	if type(t) ~= "string" then
+		error(sender, msg or "Invalid string provided ", ...)
+	end
+end
+
+function Assert.Table(t, sender, msg, ...)
+	if type(t) ~= "table" then
+		error(sender, msg or "Invalid string provided ", ...)
+	end
+end
+
 function Assert.type(t, sender, msg, ...)
 	if not t or not t.Type then
 		error(sender, msg or "Invalid type provided ", ...)
@@ -82,3 +98,26 @@ function Assert.type_nonnamespace(t, sender, msg, ...)
 		error(sender, msg or "Invalid type provided ", ...)
 	end
 end
+
+-----------------------
+-- part of lua-backup project
+-- object-oriented support for lua
+
+function inheritsFrom( base )
+    local class = {}
+    local mt = { __index = class }
+    class.Base = base
+    
+    function class:Create(...)
+       local inst = setmetatable( { } , mt )
+       inst:Init(...)
+       return inst
+    end
+
+    if base then
+        setmetatable( class, { __index = base } )
+    end
+
+    return class
+end
+

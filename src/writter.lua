@@ -1,105 +1,131 @@
 
+local FileBlock = inheritsFrom(nil)
 
-Writter = {}
-local Writter_mt = { __index = Writter }
-
-function Writter.open()
-    local new_inst = {}   
-    setmetatable( new_inst, Writter_mt )
-	new_inst.block = 0
-	new_inst.ImplLines = { }
-	new_inst.DefLines = { }
-	new_inst.enabled = true
-    return new_inst
+function FileBlock:Init(Writter)
+	self.Writter = Writter
+	self.Block = 0
+	self.Enabled = true
+	self.Lines = { }
 end
 
-function Writter:EnableOutput(value)
-	self.enabled = value
+function FileBlock:Ident()
+    return string.rep(self.Writter.Ident, self.Block)
 end
 
-function Writter:BeginBlock()
-	self.block = self.block + 1
+function FileBlock:SetLinePrefix(LinePrefix)
+	self.LinePrefix = LinePrefix
 end
 
-function Writter:EndBlock()
-	self.block = self.block - 1
-	if self.block < 0 then
-		self.block = 0
+function FileBlock:BeginBlock()
+	self.Block = self.Block + 1
+end
+
+function FileBlock:EndBlock()
+	self.Block = self.Block - 1
+	if self.Block < 0 then
+		self.Block = 0
 	end
 end
 
-function Writter:Ident()
-	return string.rep("\t", self.block)
-end
-
-function Writter:DefBlockLine(parts)
+function FileBlock:BlockLine(parts)
 	self:BeginBlock()
-	self:DefLine(parts)
+	self:Line(parts)
 	self:EndBlock()
 end
 
-function Writter:DefLine(parts)
-	if not self.enabled then
+function FileBlock:BeginBlockLine(parts)
+	self:Line(parts)
+	self:BeginBlock()
+end
+
+function FileBlock:EndBlockLine(parts)
+	self:EndBlock()
+	self:Line(parts)
+end
+
+function FileBlock:Line(parts)
+	if not self.Enabled then
 		return
 	end
 
 	local line = { }
-	self.DefLines[#self.DefLines + 1] = line
+	self.Lines[#self.Lines + 1] = line
 	
 	local put = function(v)
+		if not v then
+			v = "[nil]"
+		end
 		line[#line + 1] = v
 	end
 	
 	put(self:Ident())
+	if self.LinePrefix then
+		put(self.LinePrefix)
+	end
+	
 	if type(parts) == "table" then
 		for i,v in ipairs(parts) do
 			put(v)
 		end
-		return
-	end
-	if type(parts) == "string" then
+	elseif type(parts) == "string" then
 		put(parts)
-		return
+	end
+	
+	put("\n")
+end
+
+function FileBlock:Write(f)
+	for i,v in ipairs(self.Lines) do
+		local line = table.concat(v, "")
+		f:write(line)
 	end
 end
 
-function Writter:ImplLine(parts)
-	if not self.enabled then
-		return
-	end
+---------------------------------------
 
-	local line = { }
-	self.ImplLines[#self.ImplLines + 1] = line
+local Writter = {}
+
+x2c.Classes.Writter = Writter
+
+function Writter:Init(FileName)
+	self.Ident = "\t"
+	self.FileBlocks = { }
 	
-	local put = function(v)
-		line[#line + 1] = v
-	end
-	
-	put(self:Ident())
-	for i,v in ipairs(parts) do
-		put(v)
-	end
+	self.ImplLines = { }
+	self.DefLines = { }
+	self.enabled = true
+    self.FileName = FileName
 end
 
-function Writter:Write(filename)
-	local f = io.open(filename, "w")
+function Writter:AddFileBlock()
+	local b = FileBlock:Create(self)
+	if self.BlockExt then
+		for k,v in pairs(self.BlockExt) do
+			b[k] = v
+		end
+	end
+	
+	self.FileBlocks[#self.FileBlocks + 1] = b
+	return b
+end
+
+---------------------------------------
+
+function Writter:WriteFileHeader()
+	error("Not implemented")
+end
+
+---------------------------------------
+
+function Writter:Close()
+	local f = io.open(self.FileName, "w")
 	if not f then
-		print("ERROR: unable to open file " .. filename .. " for writting")
-		return false
+		error("Unable to open file " .. filename .. " for writting")
 	end
 	
-	for i,v in ipairs(self.DefLines) do
-		local line = table.concat(v, "")
-		f:write(line, "\n")
+	for i,block in ipairs(self.FileBlocks) do
+		block:Write(f)
 	end
-	
-	f:write("\n")
-		
-	for i,v in ipairs(self.ImplLines) do
-		local line = table.concat(v, "")
-		f:write(line, "\n")
-	end
-	
 	f:close()
 	return true
 end
