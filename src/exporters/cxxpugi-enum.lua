@@ -41,7 +41,7 @@ function EnumType:WriteImplementation(block)
 			for i,v in ipairs(self.values) do 
 				block:DocString(v.description)
 				if v.value then
-					block:Line { v.name, " = ", vvalue, ",", }			
+					block:Line { v.name, " = ", v.value, ",", }			
 				else
 					block:Line { v.name, ",", }
 				end
@@ -69,6 +69,23 @@ function EnumType:WriteImplementation(block)
 	block:Line { "return true;" }
 	block:EndBlock()
 	block:Line { "};", }
+	
+	block:BeginStructure(self:LocalName() .. "_TypeInfo")
+	block:MakeAlias("Type", self:LocalName())
+	block:BeginBlockLine { "static constexpr char *GetTypeName() {" } 
+	block:BlockLine { "return \"", self:GetName(), "\";", }
+	block:EndBlockLine { "}", }
+	block:BeginBlockLine { "static bool GetValues(std::unordered_map<std::string, uint64_t> &values) {" } 
+	if self.values then
+		for i,v in ipairs(self.values) do 
+			block:Line { "values[\"", v.name, "\"] = static_cast<uint64_t>(", self:LocalName(), "::", v.name, ");", }
+		end
+		block:Line { "return true;", }
+	else
+		block:Line { "return false;", }
+	end
+	block:EndBlockLine { "}", }
+	block:EndStructure()
 end
 
 return EnumTypeMt

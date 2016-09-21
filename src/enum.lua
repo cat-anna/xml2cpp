@@ -9,23 +9,36 @@ local function make_enum(data)
 	end
 	
 	if data.values then
-		data.value_members = { }
-		data.value_values = { }
+		local values = data.values
 		data.values = { }
-		for i,v in ipairs(data.values) do 
-			Assert.Table(v, "Enum")
-			Assert.String(v.name, "Enum", "Found nameless enum value!")
-	
-			x2c.Exporter:InitTypeExporterMemberInfo(v, "Enum")
+		for i,v in ipairs(values) do 
+			local value
+			if type(v) == "string" then
+				value = {
+					name = v,
+				}
+			else
+				value = v
+				Assert.Table(v, "Enum")
+				Assert.String(v.name, "Enum", "Found nameless enum value!")
+			end
+					
+			x2c.Exporter:InitTypeExporterMemberInfo(value, "Enum")
 		
 			local decorated = string.format("%s%s%s", 
 				data.config.enum_value_prefix or "", 
-				v.name,
+				value.name,
 				data.config.enum_value_postfix or ""
 			)
-			v.decorated = decorated
+			value.decorated = decorated
+			data.values[#data.values + 1] = value
 		end	
+		
+		if #data.values < 1 then
+			data.values = nil
+		end
 	end
+	
     data.object_type = "Enum"
 	local e = x2c.Exporter:MakeEnum(data)
 	x2c.RegisterType(e, x2c.CurrentNamespace)

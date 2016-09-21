@@ -28,7 +28,7 @@ function CXXBlockExt:MakeAlias(name, srcname)
 end
 
 function CXXBlockExt:DefineStructure(name)
-	self:BeginBlockLine { "struct ", name, ";", }
+	self:Line { "struct ", name, ";", }
 end
 
 function CXXBlockExt:BeginStructure(name)
@@ -95,6 +95,16 @@ function CXXWritter:WriteX2CImpl(ImplList)
 		first = false
 		v:GenImplementation(block)
 	end
+	
+	block:Line { }
+	
+	block:BeginStructure("StructureMemberInfo")
+	block:Line "std::string m_Name;"
+	block:Line "std::string m_Default;"
+	block:Line "std::string m_Description;"
+	block:Line "std::string m_TypeName;"
+	block:EndStructure()
+	block:MakeAlias("StructureMemberInfoTable", "std::vector<StructureMemberInfo>")
 	
 	block:EndNamespace()
 	block:EndNamespace()

@@ -33,6 +33,13 @@ function Alias_t:WriteImplementation(block)
 	block:Line { "using ", self:LocalName(), " = ", self.source_type:GlobalName(), ";", }
 end
 
+function Alias_t:GetBaseType()
+	if not self.source_type or not self.source_type.GetBaseType then
+		return self
+	end
+	return self.source_type:GetBaseType()
+end
+
 function CXXPugi:MakeAlias(data)
 	setmetatable(data, Alias_t_mt)
 	return data

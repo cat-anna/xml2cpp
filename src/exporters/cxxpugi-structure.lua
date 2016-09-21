@@ -69,6 +69,12 @@ function StrucType:WriteClass(block)
 	block:Line { "inline bool ", self:LocalName(), "_Write(pugi::xml_node in_node, const ", self:LocalName(), " &value, const char* name);", }
 	block:Line { "inline bool ", self:LocalName(), "_Read(const pugi::xml_node in_node, ", self:LocalName(), " &value, const char* name);", }	
 	block:Line { "inline void ", self:LocalName(), "_SetDefault(", self:LocalName(), " &value);", }	
+	block:Line { "inline void ", self:LocalName(), "_GetMemberInfo(::x2c::cxxpugi::StructureMemberInfoTable &output);", }
+
+	block:Line { "inline void ", self:LocalName(), "_GetWriteFuncs(std::unordered_map<std::string, ",
+		"std::function<void(", self:LocalName(), " &self, const std::string &input)>> &funcs);", }	
+	block:Line { "inline void ", self:LocalName(), "_GetReadFuncs(std::unordered_map<std::string, ",
+		"std::function<void(const ", self:LocalName(), " &self,std::string &output)>> &funcs);", }	
 	
 	block:BeginStructure(self:LocalName())
 	
@@ -83,12 +89,12 @@ function StrucType:WriteClass(block)
 	
 	block:Line { }
 	
+	block:Line "static constexpr char *GetTypeName() {"
+	block:BlockLine { "return \"", self:GetName(), "\";", }
+	block:Line "}"
+	
 	block:Line "bool Read(const pugi::xml_node node, const char *name = nullptr) {" 
-	block:BlockLine { 
-		"return ", 
-		self:GlobalName(),
-		"_Read(node, *this, name);",
-	}
+	block:BlockLine { "return ", self:GlobalName(), "_Read(node, *this, name);", }
 	block:Line "}"
 	block:Line "bool Write(pugi::xml_node node, const char *name = nullptr) const {" 
 	block:BlockLine { "return ", self:GlobalName(), "_Write(node, *this, name);", }
@@ -113,7 +119,94 @@ function StrucType:WriteClass(block)
 	block:EndBlock()
 	block:Line "}"		
 	
+	block:Line { "void GetMemberInfo(::x2c::cxxpugi::StructureMemberInfoTable &members) const {" }
+	block:BlockLine { "return ", self:GlobalName(), "_GetMemberInfo(members);", }
+	block:Line "}"		
+	block:Line { "void GetWriteFuncs(std::unordered_map<std::string, std::function<void(", self:LocalName(), " &self, const std::string &input)>> &funcs) const {" }
+	block:BlockLine { "return ", self:GlobalName(), "_GetWriteFuncs(funcs);", }
+	block:Line "}"		
+	block:Line { "void GetReadFuncs(std::unordered_map<std::string, std::function<void(const ", self:LocalName(), " &self, std::string &output)>> &funcs) {" }
+	block:BlockLine { "return ", self:GlobalName(), "_GetReadFuncs(funcs);", }
+	block:Line "}"		
+	
 	block:EndStructure()
+end
+
+function StrucType:WriteInfoGetter(block, exportsettings, default)
+
+	local members = { }
+	
+	local add = function(name, decorated, default, type)
+		members[#members + 1] = { 
+			name = name,
+			decorated = decorated,
+			default = tostring(default),
+			type = type,
+		}
+	end
+	
+	local itfunc 
+	itfunc = function(member, nametree, decorated)
+		local t = member.type
+		
+		while t.source_type do
+			t = t.source_type 
+		end	
+		local name
+		if nametree then
+			name = nametree .. "." .. member.name
+			decorated = decorated .. "." .. member.decoratedname
+		else
+			name = member.name
+			decorated = member.decoratedname
+		end
+		if t:Type() ~= "Structure" then
+			add(name, decorated, member.default or "", t)
+		else
+			for i,v in ipairs(t.fields) do 
+				itfunc(v, name, decorated)
+			end			
+		end
+	end
+	
+	for i,v in ipairs(self.fields) do 
+		itfunc(v, nil, nil)
+	end		
+	
+	block:BeginBlockLine { "inline void ", self:LocalName(), "_GetMemberInfo(::x2c::cxxpugi::StructureMemberInfoTable &output) {" }
+	block:BeginBlockLine "auto table = ::x2c::cxxpugi::StructureMemberInfoTable {"
+	for i,v in ipairs(members) do 
+		block:Line { "::x2c::cxxpugi::StructureMemberInfo{ \"", v.name, "\", \"", v.default, "\", \"\", \"", v.type:GetName(), "\", },", }
+	end	
+	block:EndBlockLine "};"
+	block:Line { "table.swap(output);" }
+	block:EndBlockLine "}"
+	
+	block:BeginBlockLine { "inline void ", self:LocalName(), "_GetWriteFuncs(std::unordered_map<std::string, ",
+		"std::function<void(", self:LocalName(), " &self, const std::string &input)>> &funcs) {" }
+	for i,v in ipairs(members) do 
+		if v.type:Type() == "Enum" then
+			block:Line { "funcs[\"", v.name, "\"] = [](", self:LocalName(), " &self, const std::string &input) ",
+				"{ std::stringstream ss; ss << input; ss >> reinterpret_cast<std::underlying_type_t<", v.type:GlobalName(), ">&>(self.", v.decorated, "); };", }		
+		elseif v.type:Type() == "Type" then
+			block:Line { "funcs[\"", v.name, "\"] = [](", self:LocalName(), " &self, const std::string &input) ",
+				"{ std::stringstream ss; ss << input; ss >> self.", v.decorated, "; };", }
+		end
+	end	
+	block:EndBlockLine "}"
+	
+	block:BeginBlockLine { "inline void ", self:LocalName(), "_GetReadFuncs(std::unordered_map<std::string, ",
+		"std::function<void(const ", self:LocalName(), " &self,std::string &output)>> &funcs) {" }
+	for i,v in ipairs(members) do 
+		if v.type:Type() == "Enum" then
+			block:Line { "funcs[\"", v.name, "\"] = [](const ", self:LocalName(), " &self, std::string &output) ",
+				"{ std::stringstream ss; ss << static_cast<std::underlying_type_t<", v.type:GlobalName(), ">>(self.", v.decorated, "); ss >> output; };", }		
+		elseif v.type:Type() == "Type" then
+			block:Line { "funcs[\"", v.name, "\"] = [](const ", self:LocalName(), " &self, std::string &output) ",
+				"{ std::stringstream ss; ss << self.", v.decorated, "; ss >> output; };", }
+		end
+	end	
+	block:EndBlockLine "}"	
 end
 
 function StrucType:WriteImplementation(block)
@@ -127,6 +220,7 @@ function StrucType:WriteImplementation(block)
 	self:WriteRead(block)
 	self:WriteWrite(block)
 	self:WriteDefault(block)
+	self:WriteInfoGetter(block)
 end
 
 ---------------------------------------
