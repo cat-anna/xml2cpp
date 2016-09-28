@@ -14,32 +14,37 @@ function ImportMeta.__call(self, importfn)
 	print("import ", importfn)
 	local fn = importfn:match("([^/\\]+)$") or importfn
 
-	if x2c.imports[fn] then
+	if x2c.importsByName[fn] then
 		return
 	end
-	
+
 	local prev
 	if ImportLevel > 0 then
 		prev = FileStack[ImportLevel]
 	end
-	
+
 	local ffull
-	
+
 	if prev then
 		ffull = prev.path .. importfn
-	else 
+	else
 		ffull = importfn
 	end
 
-	fpath = ffull:match("(.*[/\\])") 
-	local fileinfo = { 
+	fpath = ffull:match("(.*[/\\])")
+	local fileinfo = {
 		types = { },
 		FileName = fn,
 	}
-	x2c.imports[fn] = fileinfo
-    
+	x2c.imports[#x2c.imports + 1] = fileinfo
+    x2c.importsByName[fn] = fileinfo
+    if not x2c.importsByLevel[ImportLevel] then
+        x2c.importsByLevel[ImportLevel] = { }
+    end
 
-	
+    local ilevel = x2c.importsByLevel[ImportLevel]
+    ilevel[#ilevel + 1] = fileinfo
+
 	info(string.format("Processing file %s (%s)", fn, ffull))
 	local f, err = loadfile(ffull)
 
@@ -48,32 +53,32 @@ function ImportMeta.__call(self, importfn)
 	end
 
 	ImportLevel = ImportLevel + 1
-	FileStack[ImportLevel] = { 
-		import = importfn, 
-		name = fn, 
-		path = fpath, 
-		ffull = ffull, 
-		fileinfo = fileinfo, 
+	FileStack[ImportLevel] = {
+		import = importfn,
+		name = fn,
+		path = fpath,
+		ffull = ffull,
+		fileinfo = fileinfo,
 	}
-	
+
 	if not x2c.settings.gen_all then
         x2c.exports[#x2c.exports + 1] = fileinfo
         fileinfo.Generate = ImportLevel == 1
     else
         fileinfo.Generate = true
 	end
-    
-    local prevfile = x2c.CurrentFie 
+
+    local prevfile = x2c.CurrentFie
 	x2c.CurrentFie = fileinfo
 	namespace ""
 	f()
-    
+
     x2c.CurrentFie = prevfile
 	namespace ""
-  
+
 	FileStack[ImportLevel] = nil
 	ImportLevel = ImportLevel - 1
-	
+
 	if not x2c.settings.gen_all then
 	end
 end

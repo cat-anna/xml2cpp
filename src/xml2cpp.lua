@@ -1,22 +1,24 @@
 #!/usr/bin/lua
 
-x2c = { 
+x2c = {
 	inputfiles = { },
 	outputfile = nil,
-	
+
 	settings = {
 		gen_all = false,
 	},
-    
+
     Exporters = { },
-	
+
 	imports = { },
-	
+	importsByName = { },
+	importsByLevel = { },
+
 	Classes = { },
-    
+
     exports = { },
-	
-	info = { 
+
+	info = {
 		Name = "xml2cpp",
 		LongName = "xml2cpp v0.1",
 	}
@@ -38,7 +40,7 @@ require "arguments"
 x2c.ParseArguments(arg)
 
 --local basedir = "d:\\Programowanie\\Projekty\\!gry\\MoonGlare\\MazeGame\\"
---x2c.inputfiles[#x2c.inputfiles + 1] =  basedir .. "MoonGlare\\Source\\Shared\\x2c\\Math.x2c" 
+--x2c.inputfiles[#x2c.inputfiles + 1] =  basedir .. "MoonGlare\\Source\\Shared\\x2c\\Math.x2c"
 --x2c.outputfile = {
 --  exporter = "cxxpugi",
 --  FileName = basedir .. "bin_vs2015\\Engine\\obj\\x32\\Debug\\Math.x2c.h",

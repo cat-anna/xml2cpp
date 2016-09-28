@@ -66,48 +66,70 @@ end
 function CXXPugi:Init(Config)
     self.Base.Init(self, Config)
     self.ImplList = CXXPugiTypes
-	
+
+	if not self.Config.OutDir then
+		self.Config.OutDir = self.Config.FileName:match("(.*[/\\])") .. "x2c.h"
+	end
+
+	self.Config.ImplFile = self.Config.OutDir
+
 	for k,v in pairs(CXXPugiTypes) do
 		x2c.GlobalNamespace:Add(v)
 	end
 end
 
-function CXXPugi:Write()
-	self.Writter = x2c.Classes.CXXWritter:Create(self.Config.FileName)
-		
-	self.Writter:WriteFileHeader()
-	self.Writter:WriteX2CImpl(self.ImplList)
-	
-	local block = self.Writter:AddFileBlock()
-	
+function CXXPugi:WriteX2CImpl(block)
 	local namespace = nil
-	
+
 	for i,v in ipairs(self.Types) do
 		--print(v.value:GetName())
 		local t = v.value
 		local tnamespace = t.namespace
-		
+
 		if tnamespace ~= namespace then
 			if namespace then
 				namespace:WriteLeave(block)
 			end
-			
+
 			namespace = tnamespace
 			namespace:WriteEnter(block)
 		end
-		
+
 		if i > 1 then
 			block:Line { }
 		end
-		
+
 		t:WriteImplementation(block)
 	end
-	
+
 	if namespace then
 		namespace:WriteLeave(block)
 	end
-	
+end
+
+function CXXPugi:Write()
+	self.Writter = x2c.Classes.CXXWritter:Create(self.Config.FileName)
+	self.ImplWritter = x2c.Classes.CXXWritter:Create(self.Config.ImplFile)
+
+	self.Writter:WriteFileHeader()
+	self.ImplWritter:WriteFileHeader()
+
+	self.ImplWritter:WriteX2CImpl(self.ImplList)
+
+	local incblock = self.Writter:AddFileBlock()
+
+	incblock:IncludeLocal("x2c.h")
+	if not x2c.settings.gen_all then
+		for i,v in ipairs(x2c.importsByLevel[1] or {}) do
+			incblock:IncludeLocal(v.FileName .. ".h")
+		end
+	end
+	incblock:Line ""
+
+	self:WriteX2CImpl(self.Writter:AddFileBlock())
+
     self.Writter:Close()
+	self.ImplWritter:Close()
 end
 
 function CXXPugi:InitTypeExporterInfo(data)
@@ -118,6 +140,6 @@ function CXXPugi:InitTypeExporterMemberInfo(data)
     if not data.pugi then
         data.pugi = { }
     end
-    
+
     data.exportsettings = data.pugi
 end
