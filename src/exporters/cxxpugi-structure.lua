@@ -187,7 +187,7 @@ function StrucType:WriteInfoGetter(block, exportsettings, default)
 	for i,v in ipairs(members) do
 		if v.type:Type() == "Enum" then
 			block:Line { "funcs[\"", v.name, "\"] = [](", self:LocalName(), " &self, const std::string &input) ",
-				"{ std::stringstream ss; ss << input; ss >> reinterpret_cast<std::underlying_type_t<", v.type:GlobalName(), ">&>(self.", v.decorated, "); };", }
+				"{ ::x2c::cxxpugi::StringToEnum(input, self.", v.decorated, "); };", }
 		elseif v.type:Type() == "Type" then
 			if v.type:GetName() == "string" then
 				block:Line { "funcs[\"", v.name, "\"] = [](", self:LocalName(), " &self, const std::string &input) ",
@@ -205,7 +205,7 @@ function StrucType:WriteInfoGetter(block, exportsettings, default)
 	for i,v in ipairs(members) do
 		if v.type:Type() == "Enum" then
 			block:Line { "funcs[\"", v.name, "\"] = [](const ", self:LocalName(), " &self, std::string &output) ",
-				"{ std::stringstream ss; ss << static_cast<std::underlying_type_t<", v.type:GlobalName(), ">>(self.", v.decorated, "); ss >> output; };", }
+				"{ ::x2c::cxxpugi::EnumToString(self.", v.decorated, ", output); };", }
 		elseif v.type:Type() == "Type" then
 			if v.type:GetName() == "string" then
 				block:Line { "funcs[\"", v.name, "\"] = [](const ", self:LocalName(), " &self, std::string &output) ",

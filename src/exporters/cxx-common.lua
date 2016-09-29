@@ -107,6 +107,17 @@ function CXXWritter:WriteX2CImpl(ImplList)
 
 	block:Line { }
 
+	block:Line { "template<typename ENUM>" }
+	block:BeginBlockLine { "void EnumToString(ENUM e, std::string &out) {" }
+	block:Line { "out = std::to_string(static_cast<uint64_t>(e));" }
+	block:EndBlockLine "}"
+	block:Line { "template<typename ENUM>" }
+	block:BeginBlockLine { "void StringToEnum(const std::string &in, ENUM &e) {" }
+	block:Line { "e = static_cast<ENUM>(::strtoull(in.c_str(), nullptr, 10));" }
+	block:EndBlockLine "}"
+
+	block:Line { }
+
 	block:BeginStructure("StructureMemberInfo")
 	block:Line "std::string m_Name;"
 	block:Line "std::string m_Default;"
