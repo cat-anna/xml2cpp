@@ -1,5 +1,26 @@
 #!/usr/bin/lua
 
+--[[
+
+%%pre-namespace-entry
+namespace x2c::n1::n2 {
+%%post-namespace-entry
+
+
+
+	%%pre-enum-definition
+	enum Enum {
+		a, b, c,
+	};
+	%%post-enum-definition
+
+%%pre-namespace-exit
+}
+%%post-namespace-exit
+
+]]
+
+
 x2c = {
 	inputfiles = { },
 	outputfile = nil,

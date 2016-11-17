@@ -1,7 +1,7 @@
 local x2c = _G["x2c"]
 
-local Options 
-local function PrintHelp()
+local Options
+function x2c.PrintHelp()
 	print "Xml2Cpp ver 0.1"
 	print ""
 	print "Usage:"
@@ -11,7 +11,7 @@ local function PrintHelp()
 	for k,v in pairs(Options) do
 		print(string.format("\t%-10s %-10s %s", k, v.ArgHelp or "", v.Help))
 	end
-	
+
 	print ""
 	os.exit(0)
 end
@@ -37,37 +37,37 @@ Options = {
 				x2c.outputfile = {
 					FileName = args[i] .. ".h",
 					exporter = "cxxpugi",
-				}					
+				}
 			end
 			return 1
-		end,	
+		end,
 	},
 	["--all"] = {
 		Help = "Export all types defined from dependant files",
 		func = function(i, args)
 			x2c.settings.gen_all = true
 			return 0
-		end,	
+		end,
 	},
 	["--help"] = {
 		Help = "Print this help",
 		func = function(i, args)
 			PrintHelp()
 			os.exit(0)
-		end,	
+		end,
 	},
 --	["--static"] = {
 --		Help = "Define all functions as static",
 --		func = function(i, args)
 --			error(args[i - 1], " is not yet supported")
---		end,	
+--		end,
 --	},
 --	["--no-inline"] = {
 --		Help = "Do not make all functions inline",
 --		func = function(i, args)
 --			error(args[i - 1], " is not yet supported")
---		end,	
---	},	
+--		end,
+--	},
 }
 
 function x2c.ParseArguments(arglist)
@@ -78,7 +78,7 @@ function x2c.ParseArguments(arglist)
 
         if v:sub(1, 2) == "--" then
             cmd = Options[v]
-            
+
             if not cmd then
                 error("Unknown option ", v)
             end

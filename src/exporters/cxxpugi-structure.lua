@@ -64,7 +64,7 @@ function StrucType:WriteRead(block)
 end
 
 function StrucType:WriteClass(block)
-	block:DocString(self.description)
+
 	block:DefineStructure(self:LocalName())
 	block:Line { "inline bool ", self:LocalName(), "_Write(pugi::xml_node in_node, const ", self:LocalName(), " &value, const char* name);", }
 	block:Line { "inline bool ", self:LocalName(), "_Read(const pugi::xml_node in_node, ", self:LocalName(), " &value, const char* name);", }
@@ -76,12 +76,13 @@ function StrucType:WriteClass(block)
 	block:Line { "inline void ", self:LocalName(), "_GetReadFuncs(std::unordered_map<std::string, ",
 		"std::function<void(const ", self:LocalName(), " &self,std::string &output)>> &funcs);", }
 
+	block:DocString(self.description)
 	block:BeginStructure(self:LocalName())
 
-	local nconf = self.namespace.config
+	--local nconf = self.namespace.config
 
 	if self.fields then
-		for i,v in ipairs(self.fields) do
+		for _,v in ipairs(self.fields) do
 			block:DocString(v.description)
 			block:Line { v.type:GlobalName(), " ", v.decoratedname, ";", }
 		end
@@ -163,19 +164,19 @@ function StrucType:WriteInfoGetter(block, exportsettings, default)
 		if t:Type() ~= "Structure" then
 			add(name, decorated, member.default or "", t)
 		else
-			for i,v in ipairs(t.fields) do
+			for _,v in ipairs(t.fields) do
 				itfunc(v, name, decorated)
 			end
 		end
 	end
 
-	for i,v in ipairs(self.fields) do
+	for _,v in ipairs(self.fields) do
 		itfunc(v, nil, nil)
 	end
 
 	block:BeginBlockLine { "inline void ", self:LocalName(), "_GetMemberInfo(::x2c::cxxpugi::StructureMemberInfoTable &output) {" }
 	block:BeginBlockLine "auto table = ::x2c::cxxpugi::StructureMemberInfoTable {"
-	for i,v in ipairs(members) do
+	for _,v in ipairs(members) do
 		block:Line { "::x2c::cxxpugi::StructureMemberInfo{ \"", v.name, "\", \"", v.default, "\", \"\", \"", v.type:GetName(), "\", },", }
 	end
 	block:EndBlockLine "};"
@@ -184,7 +185,7 @@ function StrucType:WriteInfoGetter(block, exportsettings, default)
 
 	block:BeginBlockLine { "inline void ", self:LocalName(), "_GetWriteFuncs(std::unordered_map<std::string, ",
 		"std::function<void(", self:LocalName(), " &self, const std::string &input)>> &funcs) {" }
-	for i,v in ipairs(members) do
+	for _,v in ipairs(members) do
 		if v.type:Type() == "Enum" then
 			block:Line { "funcs[\"", v.name, "\"] = [](", self:LocalName(), " &self, const std::string &input) ",
 				"{ ::x2c::cxxpugi::StringToEnum(input, self.", v.decorated, "); };", }
@@ -202,7 +203,7 @@ function StrucType:WriteInfoGetter(block, exportsettings, default)
 
 	block:BeginBlockLine { "inline void ", self:LocalName(), "_GetReadFuncs(std::unordered_map<std::string, ",
 		"std::function<void(const ", self:LocalName(), " &self,std::string &output)>> &funcs) {" }
-	for i,v in ipairs(members) do
+	for _,v in ipairs(members) do
 		if v.type:Type() == "Enum" then
 			block:Line { "funcs[\"", v.name, "\"] = [](const ", self:LocalName(), " &self, std::string &output) ",
 				"{ ::x2c::cxxpugi::EnumToString(self.", v.decorated, ", output); };", }
@@ -237,7 +238,7 @@ end
 
 function StrucType:GenResetToDefault(member, name, writter, exportsettings, default)
 	default = default or { }
-	for i,v in ipairs(self.fields) do
+	for _,v in ipairs(self.fields) do
 		v.type:GenResetToDefault(member .. "." .. v.decoratedname, "\"" .. v.name .. "\"", writter, v.exportsettings, default[v.name])
 	end
 end
