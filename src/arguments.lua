@@ -1,7 +1,7 @@
 local x2c = _G["x2c"]
 
-local Options 
-local function PrintHelp()
+local Options
+function x2c.PrintHelp()
 	print "Xml2Cpp ver 0.1"
 	print ""
 	print "Usage:"
@@ -11,7 +11,7 @@ local function PrintHelp()
 	for k,v in pairs(Options) do
 		print(string.format("\t%-10s %-10s %s", k, v.ArgHelp or "", v.Help))
 	end
-	
+
 	print ""
 	os.exit(0)
 end
@@ -21,10 +21,7 @@ Options = {
 		ArgHelp = "<FILE>",
 		Help = "Set output filename",
 		func = function(i, args)
-			x2c.outputfile = {
-				FileName = args[i],
-				exporter = "cxxpugi",
-			}			
+			x2c.outputfile = args[i]
 			return 1
 		end,
 	},
@@ -32,43 +29,52 @@ Options = {
 		ArgHelp = "<FILE>",
 		Help = "Add file to process",
 		func = function(i, args)
-			x2c.inputfiles[#x2c.inputfiles + 1] = args[i]
+			if x2c.inputfile then
+				error "Input alread specified"
+			end
+			x2c.inputfile = args[i]
 			if not x2c.outputfile then
-				x2c.outputfile = {
-					FileName = args[i] .. ".h",
-					exporter = "cxxpugi",
-				}					
+				x2c.outputfile = args[i] .. ".h"
 			end
 			return 1
-		end,	
+		end,
 	},
-	["--all"] = {
-		Help = "Export all types defined from dependant files",
-		func = function(i, args)
-			x2c.settings.gen_all = true
-			return 0
-		end,	
+--	["--all"] = {
+--		Help = "Export all types defined from dependant files",
+--		func = function(i, args)
+--			x2c.settings.gen_all = true
+--			return 0
+--		end,
+--	},
+	["--enable-all"] = {
+		Help = "Enable all exporters",
+		func = function()
+			for _,v in pairs(x2c.exporters) do
+				x2c.EnableExporter(v)
+			end
+		end,
 	},
 	["--help"] = {
 		Help = "Print this help",
 		func = function(i, args)
-			PrintHelp()
+			x2c.PrintHelp()
 			os.exit(0)
-		end,	
+		end,
 	},
 --	["--static"] = {
 --		Help = "Define all functions as static",
 --		func = function(i, args)
 --			error(args[i - 1], " is not yet supported")
---		end,	
+--		end,
 --	},
 --	["--no-inline"] = {
 --		Help = "Do not make all functions inline",
 --		func = function(i, args)
 --			error(args[i - 1], " is not yet supported")
---		end,	
---	},	
+--		end,
+--	},
 }
+x2c.ArgumentsTable = Options
 
 function x2c.ParseArguments(arglist)
     local i = 1
@@ -78,7 +84,7 @@ function x2c.ParseArguments(arglist)
 
         if v:sub(1, 2) == "--" then
             cmd = Options[v]
-            
+
             if not cmd then
                 error("Unknown option ", v)
             end
@@ -90,6 +96,6 @@ function x2c.ParseArguments(arglist)
             i = i + 1
         end
 
-        i = i + cmd.func(i, arglist)
+        i = i + (cmd.func(i, arglist) or 0)
     end
 end

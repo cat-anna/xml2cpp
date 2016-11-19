@@ -8,16 +8,12 @@ function x2c.MakeTypeClass()
 	local base = x2c.BaseType
 
     local class = {}
-    local mt = { 
-		__index = class, 
-		__call = BaseType_mt.__call, 
+    local mt = {
+		__index = class,
+		__call = BaseType_mt.__call,
 		__newindex = BaseType_mt.__newindex,
 		__tostring = BaseType_mt.__tostring,
 	}
-
---    function class:create()
---        return setmetatable( { } , mt )
---    end
 
     setmetatable( class, { __index = BaseType } )
 
@@ -48,22 +44,22 @@ function BaseType:GenWrite(member, name, writter, exportsettings)
 	exportsettings = exportsettings or { }
 	name = name or "nullptr"
 	if exportsettings.require then
-		writter:Line { 
-			"if(!", 
-			self:GlobalName(), 
-			"_Write(node, ", 
-			member, 
+		writter:Line {
+			"if(!",
+			self:GlobalName(),
+			"_Write(node, ",
+			member,
 			", ", name,
-			")) return false;", 
-		}	
-	else 
-		writter:Line { 
-			self:GlobalName(), 
-			"_Write(node, ", 
-			member, 
+			")) return false;",
+		}
+	else
+		writter:Line {
+			self:GlobalName(),
+			"_Write(node, ",
+			member,
 			", ", name,
-			");", 
-		}		
+			");",
+		}
 	end
 end
 
@@ -71,27 +67,31 @@ function BaseType:GenRead(member, name, writter, exportsettings)
 	exportsettings = exportsettings or { }
 	name = name or "nullptr"
 	if exportsettings.require then
-		writter:Line { 
-			"if(!", 
-			self:GlobalName(), 
-			"_Read(node, ", 
-			member, 
+		writter:Line {
+			"if(!",
+			self:GlobalName(),
+			"_Read(node, ",
+			member,
 			", ", name,
-			")) return false;", 
+			")) return false;",
 		}
-	else 
-		writter:Line { 
-			self:GlobalName(), 
-			"_Read(node, ", 
-			member, 
+	else
+		writter:Line {
+			self:GlobalName(),
+			"_Read(node, ",
+			member,
 			", ", name,
-			");", 
+			");",
 		}
 	end
 end
 
 function BaseType:Type()
 	return self.object_type or "Unknown"
+end
+
+function BaseType:GeneratorType()
+	return self.Generator or self:Type()
 end
 
 function BaseType:GlobalName()
@@ -145,7 +145,7 @@ function Meta_mt.__index(self, key)
 	if not f then
 		error(self, "there is no such operation - ", key)
 	end
-	
+
 	return f
 end
 
@@ -161,4 +161,19 @@ function x2c.MakeMetaSubObject(owner, object, name)
 	owner[name] = object
     setmetatable(object, Meta_mt)
 	return object
+end
+
+-----------------------------------------------------
+
+local Generator = { }
+
+function Generator:Init()
+end
+
+function Generator:Generate(block, Type, Observers)
+	error "Not implemented"
+end
+
+function x2c.MakeGenerator(class)
+    return inheritsFrom(Generator, class):Create()
 end
