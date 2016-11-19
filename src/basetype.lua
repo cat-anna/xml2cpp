@@ -15,10 +15,6 @@ function x2c.MakeTypeClass()
 		__tostring = BaseType_mt.__tostring,
 	}
 
---    function class:create()
---        return setmetatable( { } , mt )
---    end
-
     setmetatable( class, { __index = BaseType } )
 
     return class, mt
@@ -94,6 +90,10 @@ function BaseType:Type()
 	return self.object_type or "Unknown"
 end
 
+function BaseType:GeneratorType()
+	return self.Generator or self:Type()
+end
+
 function BaseType:GlobalName()
 	return self.namespace:GlobalName() .. "::" .. self:LocalName()
 end
@@ -163,20 +163,17 @@ function x2c.MakeMetaSubObject(owner, object, name)
 	return object
 end
 
-
 -----------------------------------------------------
 
 local Generator = { }
-local Generator_mt = { __index = Generator, }
 
 function Generator:Init()
-	error "Not implemented"
 end
 
 function Generator:Generate(block, Type, Observers)
 	error "Not implemented"
 end
 
-function x2c.MakeGenerator()
-    return setmetatable({ }, Meta_mt)
+function x2c.MakeGenerator(class)
+    return inheritsFrom(Generator, class):Create()
 end

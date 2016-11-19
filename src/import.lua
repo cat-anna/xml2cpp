@@ -1,8 +1,6 @@
 
 function x2c.ImportInputFiles()
-    for i,v in ipairs(x2c.inputfiles) do
-        Import(v)
-    end
+    Import(x2c.inputfile)
 end
 
 local ImportMeta = { }
@@ -35,6 +33,7 @@ function ImportMeta.__call(self, importfn)
 	local fileinfo = {
 		types = { },
 		FileName = fn,
+        Imports = { },
 	}
 	x2c.imports[#x2c.imports + 1] = fileinfo
     x2c.importsByName[fn] = fileinfo
@@ -68,7 +67,15 @@ function ImportMeta.__call(self, importfn)
         fileinfo.Generate = true
 	end
 
+    if  x2c.CurrentFie then
+        local Deps = x2c.CurrentFie.Imports
+        Deps[#Deps + 1] = fileinfo
+    end
+
     local prevfile = x2c.CurrentFie
+    if not x2c.BaseFile then
+        x2c.BaseFile = fileinfo
+    end
 	x2c.CurrentFie = fileinfo
 	namespace ""
 	f()

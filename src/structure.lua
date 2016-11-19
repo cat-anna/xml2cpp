@@ -1,8 +1,7 @@
 
 local Assert = x2c.Assert
-local GenPoints = x2c.Observer.GenPoints
 
-_______________________
+-----------------------------------------------------------
 
 local function make_structure(data)
     x2c.Exporter:InitTypeExporterInfo(data, "Structure")
@@ -40,7 +39,7 @@ local function make_structure(data)
 	return s
 end
 
-_______________________
+-----------------------------------------------------------
 
 local StructureMeta = { }
 
@@ -109,70 +108,7 @@ function StructureMeta.postfix(value)
 	x2c.CurrentNamespace.config.structure_postfix = value
 end
 
-_______________________________________
-
-x2c.Structure = x2c.MakeGenerator()
-local Structure = x2c.Structure
-
-function Structure.Init()
-
-end
-
-function Structure.Generate(Block, Type, Observer)
-
-    if Type.imported then
-        Observer:Execute(GenPoints.pre_struct_declartion, Block, Type)
-        block:DocString(Type.description)
-        block:MakeAlias(Type:LocalName(), Type.location)
-        Observer:Execute(GenPoints.struct_import, Block, Type)
-        Observer:Execute(GenPoints.post_struct_declartion, Block, Type)
-        return
-    end
-
-    Observer:Execute(GenPoints.pre_struct_declartion, Block, Type)
-    Block:DefineStructure(Type:LocalName())
-    Observer:Execute(GenPoints.post_struct_declartion, Block, Type)
-
-    Observer:Execute(GenPoints.pre_struct_definition, Block, Type)
-
-        Block:DocString(Type.description)
-        Block:BeginStructure(Type:LocalName())
-
-            Observer:Execute(GenPoints.struct_entry, Block, Type)
-
-
-            Observer:Execute(GenPoints.pre_struct_members, Block, Type)
-            Observer:Execute(GenPoints.post_struct_members, Block, Type)
-
-
-            Observer:Execute(GenPoints.struct_exit, Block, Type)
-
-    	block:EndStructure()
-
-    Observer:Execute(GenPoints.post_struct_definition, Block, Type)
---[[
-
-%%pre_struct_declartion
-struct name;
-%%post_struct_declartion
-
-%%pre_struct_definition
-/** doc */
-struct name {
-    %%struct_entry/%%struct_import
-
-    %%pre_struct_members
-    int members;
-    %%post_struct_members
-
-    %%struct_exit
-};
-%%post_struct_definition
-
-]]
-end
-
-_______________________________________
+-----------------------------------------------------------
 
 local StructureFieldMeta = { }
 
@@ -186,7 +122,7 @@ function StructureFieldMeta.postfix(value)
 	x2c.CurrentNamespace.config.structure_field_postfix = value
 end
 
-_______________________
+-----------------------------------------------------------
 
 x2c.MakeMetaSubObject(StructureMeta, StructureFieldMeta, "field")
 x2c.MakeMetaObject(StructureMeta, "Structure")

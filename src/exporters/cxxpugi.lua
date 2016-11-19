@@ -1,9 +1,16 @@
 local CXXPugi = inheritsFrom(x2c.Classes.Exporter)
-x2c.Exporters.cxxpugi = CXXPugi
 
 ------------------------------------------------------------------------
 
-local StrucTypeMt = require "exporters/cxxpugi-structure"
+local StrucType, StrucTypeMt = x2c.MakeTypeClass()
+
+function StrucType:LocalName()
+	return self.classname
+end
+
+function StrucType:GlobalName()
+	return self.namespace:GlobalName() .. "::" .. self.classname
+end
 
 function CXXPugi:MakeStructure(data)
 	return setmetatable(data, StrucTypeMt)
@@ -29,10 +36,6 @@ function Alias_t:GenRead(member, name, writter)
 	self.source_type:GenRead(member, name, writter)
 end
 
-function Alias_t:WriteImplementation(block)
-	block:Line { "using ", self:LocalName(), " = ", self.source_type:GlobalName(), ";", }
-end
-
 function Alias_t:GetBaseType()
 	if not self.source_type or not self.source_type.GetBaseType then
 		return self
@@ -47,7 +50,15 @@ end
 
 ------------------------------------------------------------------------
 
-local EnumTypeMt = require "exporters/cxxpugi-enum"
+local EnumType, EnumTypeMt = x2c.MakeTypeClass()
+
+function EnumType:GenResetToDefault(member, name, block)
+	error()
+end
+
+function EnumType:GetDefault()
+	return self.default
+end
 
 function CXXPugi:MakeEnum(data)
 	return setmetatable(data, EnumTypeMt)
@@ -67,69 +78,9 @@ function CXXPugi:Init(Config)
     self.Base.Init(self, Config)
     self.ImplList = CXXPugiTypes
 
-	if not self.Config.OutDir then
-		self.Config.OutDir = self.Config.FileName:match("(.*[/\\])") .. "x2c.h"
-	end
-
-	self.Config.ImplFile = self.Config.OutDir
-
 	for k,v in pairs(CXXPugiTypes) do
 		x2c.GlobalNamespace:Add(v)
 	end
-end
-
-function CXXPugi:WriteX2CImpl(block)
-	local namespace = nil
-
-	for i,v in ipairs(self.Types) do
-		--print(v.value:GetName())
-		local t = v.value
-		local tnamespace = t.namespace
-
-		if tnamespace ~= namespace then
-			if namespace then
-				namespace:WriteLeave(block)
-			end
-
-			namespace = tnamespace
-			namespace:WriteEnter(block)
-		end
-
-		if i > 1 then
-			block:Line { }
-		end
-
-		t:WriteImplementation(block)
-	end
-
-	if namespace then
-		namespace:WriteLeave(block)
-	end
-end
-
-function CXXPugi:Write()
-	self.Writter = x2c.Classes.CXXWritter:Create(self.Config.FileName)
-	self.ImplWritter = x2c.Classes.CXXWritter:Create(self.Config.ImplFile)
-
-	self.Writter:WriteFileHeader()
-	self.ImplWritter:WriteFileHeader()
-
-	self.ImplWritter:WriteX2CImpl(self.ImplList)
-
-	local incblock = self.Writter:AddFileBlock()
-
-	incblock:IncludeLocal("x2c.h")
-	if not x2c.settings.gen_all then
-		for i,v in ipairs(x2c.importsByLevel[1] or {}) do
-			incblock:IncludeLocal(v.FileName .. ".h")
-		end
-	end
-	incblock:Line ""
-
-	self:WriteX2CImpl(self.Writter:AddFileBlock())
-
-    self.Writter:Close()
-	self.ImplWritter:Close()
 end
 
 function CXXPugi:InitTypeExporterInfo(data)
@@ -143,3 +94,88 @@ function CXXPugi:InitTypeExporterMemberInfo(data)
 
     data.exportsettings = data.pugi
 end
+
+function CXXPugi:GetObserver()
+	local Observer = x2c.Classes.ObserverBroadcast.New()
+	Observer:Add(require "cxx/exporters/pugi-structure")
+	Observer:Add(require "cxx/exporters/pugi-enum")
+	Observer:Add(require "cxx/exporters/pugi-container")
+	Observer:Add(self)
+	return Observer
+end
+
+function CXXPugi:file_start(_, Block)
+	local StartBlock = Block:GetWritter():FindFileBlock("start")
+	StartBlock:IncludeLocal("x2c.h")
+end
+
+function CXXPugi:file_end(_, Block)
+	self:WriteX2CImpl()
+end
+
+function CXXPugi:WriteX2CImpl()
+	local ImplFile
+
+	print(x2c.outputfile)
+	ImplFile = (x2c.outputfile:match("(.*[/\\])") or "") .. "x2c.h"
+
+	local writter = x2c.Classes.CXXWritter:Create(ImplFile)
+	writter:WriteFileHeader()
+	local block = writter:AddFileBlock()
+
+	block:Line { "#ifndef _X2C_IMPLEMENTATION_" }
+	block:Line { "#define _X2C_IMPLEMENTATION_" }
+	block:Line ""
+	block:BeginNamespace("x2c")
+	block:BeginNamespace("cxxpugi")
+
+	block:Line { "template<bool Required, bool Attribute, class Type, class Reader>" }
+	block:Line { "inline bool Read(Type &, Reader, const char *);"}
+
+	block:Line { "template<bool Attribute, class Type, class Reader>" }
+	block:Line { "inline bool Write(const Type &, Reader, const char *);"}
+
+	block:Line { }
+
+	local first = true
+	for i,v in pairs(self.ImplList) do
+		if not first then
+			block:Line { }
+		end
+		first = false
+		v:GenImplementation(block)
+	end
+
+	block:Line { }
+
+	block:Line { "template<typename ENUM>" }
+	block:BeginBlockLine { "void EnumToString(ENUM e, std::string &out) {" }
+	block:Line { "out = std::to_string(static_cast<uint64_t>(e));" }
+	block:EndBlockLine "}"
+	block:Line { "template<typename ENUM>" }
+	block:BeginBlockLine { "void StringToEnum(const std::string &in, ENUM &e) {" }
+	block:Line { "e = static_cast<ENUM>(::strtoull(in.c_str(), nullptr, 10));" }
+	block:EndBlockLine "}"
+
+	block:Line { }
+
+	block:BeginStructure("StructureMemberInfo")
+	block:Line "std::string m_Name;"
+	block:Line "std::string m_Default;"
+	block:Line "std::string m_Description;"
+	block:Line "std::string m_TypeName;"
+	block:EndStructure()
+	block:MakeAlias("StructureMemberInfoTable", "std::vector<StructureMemberInfo>")
+
+	block:EndNamespace()
+	block:EndNamespace()
+	block:Line ""
+	block:Line { "#endif //_X2C_IMPLEMENTATION_" }
+
+	writter:Close()
+end
+
+------------------------------------------------------------------------
+
+x2c.Exporter = CXXPugi:Create()
+x2c.RegisterExporter(x2c.Exporter, "cxxpugi")

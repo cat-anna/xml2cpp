@@ -21,10 +21,7 @@ Options = {
 		ArgHelp = "<FILE>",
 		Help = "Set output filename",
 		func = function(i, args)
-			x2c.outputfile = {
-				FileName = args[i],
-				exporter = "cxxpugi",
-			}			
+			x2c.outputfile = args[i]
 			return 1
 		end,
 	},
@@ -32,27 +29,35 @@ Options = {
 		ArgHelp = "<FILE>",
 		Help = "Add file to process",
 		func = function(i, args)
-			x2c.inputfiles[#x2c.inputfiles + 1] = args[i]
+			if x2c.inputfile then
+				error "Input alread specified"
+			end
+			x2c.inputfile = args[i]
 			if not x2c.outputfile then
-				x2c.outputfile = {
-					FileName = args[i] .. ".h",
-					exporter = "cxxpugi",
-				}
+				x2c.outputfile = args[i] .. ".h"
 			end
 			return 1
 		end,
 	},
-	["--all"] = {
-		Help = "Export all types defined from dependant files",
-		func = function(i, args)
-			x2c.settings.gen_all = true
-			return 0
+--	["--all"] = {
+--		Help = "Export all types defined from dependant files",
+--		func = function(i, args)
+--			x2c.settings.gen_all = true
+--			return 0
+--		end,
+--	},
+	["--enable-all"] = {
+		Help = "Enable all exporters",
+		func = function()
+			for _,v in pairs(x2c.exporters) do
+				x2c.EnableExporter(v)
+			end
 		end,
 	},
 	["--help"] = {
 		Help = "Print this help",
 		func = function(i, args)
-			PrintHelp()
+			x2c.PrintHelp()
 			os.exit(0)
 		end,
 	},
@@ -69,6 +74,7 @@ Options = {
 --		end,
 --	},
 }
+x2c.ArgumentsTable = Options
 
 function x2c.ParseArguments(arglist)
     local i = 1
@@ -90,6 +96,6 @@ function x2c.ParseArguments(arglist)
             i = i + 1
         end
 
-        i = i + cmd.func(i, arglist)
+        i = i + (cmd.func(i, arglist) or 0)
     end
 end
